@@ -1,28 +1,31 @@
-package pets;
+package service;
 
+import client.ClientHTTPConfiguration;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import domain.Pet;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Scanner;
 
 public class PetsService {
 
+    private ClientHTTPConfiguration client;
+
+    public PetsService(ClientHTTPConfiguration client){
+        this.client = client;
+    }
+
     public void listarPetCadastradosPorAbrigo() throws IOException, InterruptedException {
         System.out.println("Digite o id ou nome do abrigo:");
         String idOuNome = new Scanner(System.in).nextLine();
-
-        HttpClient client = HttpClient.newHttpClient();
         String uri = "http://localhost:8080/abrigos/" + idOuNome + "/pets";
-        var response = realizarRequisicaoGET(uri,client);
+
+        var response = client.realizarRequisicaoGET(uri);
         int statusCode = response.statusCode();
         if (statusCode == 404 || statusCode == 500) {
             System.out.println("ID ou nome não cadastrado!");
@@ -65,17 +68,10 @@ public class PetsService {
             String cor = campos[4];
             Float peso = Float.parseFloat(campos[5]);
 
-            JsonObject json = new JsonObject();
-            json.addProperty("tipo", tipo.toUpperCase());
-            json.addProperty("nome", nome);
-            json.addProperty("raca", raca);
-            json.addProperty("idade", idade);
-            json.addProperty("cor", cor);
-            json.addProperty("peso", peso);
+            Pet pet = new Pet(tipo,nome,raca,idade,cor,peso);
 
-            HttpClient client = HttpClient.newHttpClient();
             String uri = "http://localhost:8080/abrigos/" + idOuNome + "/pets";
-            var response = realizarRequisicaoPOST(uri,client,json);
+            var response = client.realizarRequisicaoPOST(uri, pet);
             int statusCode = response.statusCode();
             String responseBody = response.body();
             if (statusCode == 200) {
@@ -91,25 +87,4 @@ public class PetsService {
         }
         reader.close();
     }
-
-    private HttpResponse<String> realizarRequisicaoPOST(String uri, HttpClient client, JsonObject json) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .header("Content-Type", "application/json")
-                .method("POST", HttpRequest.BodyPublishers.ofString(json.toString()))
-                .build();
-
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpResponse<String> realizarRequisicaoGET(String uri, HttpClient client) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .method("GET", HttpRequest.BodyPublishers.noBody())
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-
-
 }
