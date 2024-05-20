@@ -40,4 +40,24 @@ class AbrigoServiceTest {
         Assertions.assertEquals(expectedIdENome, actualIdENome);
     }
 
+    public void verificarSeNaoHaAbrigo() throws IOException, InterruptedException {
+        abrigo.setId(0L);
+        String expectedAbrigosCadastrados = "Abrigos cadastrados:";
+        String expectedIdENome = "0 - Teste";
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(baos);
+        System.setOut(printStream);
+
+        when(response.body()).thenReturn("[]");
+        when(client.realizarRequisicaoGET(anyString())).thenReturn(response);
+
+        abrigoService.listarAbrigo();
+
+        String[] lines = baos.toString().split(System.lineSeparator());
+        String actual = lines[0];
+
+        Assertions.assertEquals(expectedAbrigosCadastrados, actual);
+    }
+
 }
